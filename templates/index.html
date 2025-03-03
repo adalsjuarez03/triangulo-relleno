@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Método DDA - Triángulo</title>
+    <style>
+        body {
+            background-color: #232523;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            width: 100%;
+        }
+        .left-panel {
+            background: #FFFDD0;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .coord-inputs {
+            display: flex;
+            justify-content: space-between;
+            gap: 5px;
+        }
+        input {
+            width: 50px;
+            padding: 4px;
+            text-align: center;
+        }
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .tables-container {
+            display: flex;
+            flex-direction: row;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .table-container {
+            flex: 1;
+            max-height: 150px;
+            overflow-y: auto;
+            background: white;
+            width: 70px;
+        }
+        .table-title {
+            background: #007bff;
+            color: white;
+            padding: 3px;
+            margin: 0;
+            font-size: 12px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 2px;
+            text-align: center;
+        }
+        th {
+            background: #00a6fb;
+            color: white;
+        }
+        img#grafica {
+            height: 600px;
+            width: 950px;
+        }
+        .pendientes-container {
+            background: white;
+            padding: 5px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+        .pendientes-container h2 {
+            margin: 0;
+            font-size: 14px;
+            text-align: center;
+            background: #007bff;
+            color: white;
+            padding: 3px;
+        }
+        .pendientes-container p {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <h2>Coordenadas</h2>
+            <div class="coords-container">
+                <div class="coord-inputs">
+                    <label>A:</label>
+                    <input type="number" id="x1" placeholder="X1">
+                    <input type="number" id="y1" placeholder="Y1">
+                </div>
+                <div class="coord-inputs">
+                    <label>B:</label>
+                    <input type="number" id="x2" placeholder="X2">
+                    <input type="number" id="y2" placeholder="Y2">
+                </div>
+                <div class="coord-inputs">
+                    <label>C:</label>
+                    <input type="number" id="x3" placeholder="X3">
+                    <input type="number" id="y3" placeholder="Y3">
+                </div>
+            </div>
+            <div class="buttons">
+                <button onclick="generarTriangulo()">Generar</button>
+                <button onclick="borrarTodo()" class="borrar">Borrar</button>
+            </div>
+            <div class="tables-container">
+                <div class="table-container">
+                    <h3 class="table-title">AB</h3>
+                    <table id="tabla-ab">
+                        <thead>
+                            <tr>
+                                <th>X</th>
+                                <th>Y</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="table-container">
+                    <h3 class="table-title">BC</h3>
+                    <table id="tabla-bc">
+                        <thead>
+                            <tr>
+                                <th>X</th>
+                                <th>Y</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="table-container">
+                    <h3 class="table-title">CA</h3>
+                    <table id="tabla-ca">
+                        <thead>
+                            <tr>
+                                <th>X</th>
+                                <th>Y</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="pendientes-container">
+                <h2>Pendientes</h2>
+                <p>AB: <span id="pendiente_ab">-</span></p>
+                <p>BC: <span id="pendiente_bc">-</span></p>
+                <p>CA: <span id="pendiente_ca">-</span></p>
+            </div>
+        </div>
+        <div class="right-panel">
+            <img id="grafica" src="/static/grafica_base.png" alt="Gráfica del Triángulo">
+        </div>
+    </div>
+    <script>
+        function generarTriangulo() {
+            let x1 = parseInt(document.getElementById("x1").value);
+            let y1 = parseInt(document.getElementById("y1").value);
+            let x2 = parseInt(document.getElementById("x2").value);
+            let y2 = parseInt(document.getElementById("y2").value);
+            let x3 = parseInt(document.getElementById("x3").value);
+            let y3 = parseInt(document.getElementById("y3").value);
+            
+            if (isNaN(x1) || isNaN(y1) || isNaN(x2) || isNaN(y2) || isNaN(x3) || isNaN(y3)) {
+                alert("Por favor, ingresa valores válidos.");
+                return;
+            }
+            fetch('/generar_triangulo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ x1, y1, x2, y2, x3, y3 })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("pendiente_ab").textContent = data.pendientes.AB;
+                document.getElementById("pendiente_bc").textContent = data.pendientes.BC;
+                document.getElementById("pendiente_ca").textContent = data.pendientes.CA;
+                
+                const tbodyAB = document.querySelector('#tabla-ab tbody');
+                tbodyAB.innerHTML = '';
+                data.puntos_ab.forEach(punto => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${punto.x}</td>
+                        <td>${punto.y}</td>
+                    `;
+                    tbodyAB.appendChild(tr);
+                });
+
+                const tbodyBC = document.querySelector('#tabla-bc tbody');
+                tbodyBC.innerHTML = '';
+                data.puntos_bc.forEach(punto => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${punto.x}</td>
+                        <td>${punto.y}</td>
+                    `;
+                    tbodyBC.appendChild(tr);
+                });
+
+                const tbodyCA = document.querySelector('#tabla-ca tbody');
+                tbodyCA.innerHTML = '';
+                data.puntos_ca.forEach(punto => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${punto.x}</td>
+                        <td>${punto.y}</td>
+                    `;
+                    tbodyCA.appendChild(tr);
+                });
+                
+                document.getElementById("grafica").src = "/static/grafica_triangulo.png?" + new Date().getTime();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function borrarTodo() {
+            document.querySelectorAll("input").forEach(input => input.value = "");
+            document.getElementById("pendiente_ab").textContent = "-";
+            document.getElementById("pendiente_bc").textContent = "-";
+            document.getElementById("pendiente_ca").textContent = "-";
+            document.getElementById("grafica").src = "/static/grafica_base.png";
+            document.querySelector('#tabla-ab tbody').innerHTML = '';
+            document.querySelector('#tabla-bc tbody').innerHTML = '';
+            document.querySelector('#tabla-ca tbody').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
